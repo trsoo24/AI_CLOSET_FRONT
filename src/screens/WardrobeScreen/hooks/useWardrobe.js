@@ -80,14 +80,16 @@ export const useWardrobe = () => {
   // 초기 로드
   useEffect(() => {
     loadItems();
-  }, [loadItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 아이템 로드 후 통계 로드
   useEffect(() => {
     if (items.length > 0) {
       loadStatistics();
     }
-  }, [items.length, loadStatistics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   // 카테고리 선택 핸들러
   const handleCategorySelect = useCallback((category) => {

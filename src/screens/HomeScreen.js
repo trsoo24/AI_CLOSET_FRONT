@@ -4,6 +4,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { Header } from '../components/common/Header';
 import { BORDER_RADIUS, COLORS, FONT_SIZE, SPACING } from '../constants';
 import { aiRecommendations, personalizedItems, trendingItems } from '../data/mockData';
+import { wardrobeService } from '../services/wardrobeService';
 import { weatherService } from '../services/weatherService';
 
 export const HomeScreen = ({ navigation }) => {
@@ -16,26 +17,31 @@ export const HomeScreen = ({ navigation }) => {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
+
+    // 날씨 데이터 불러오기
     try {
-      setLoading(true);
-      
-      // 날씨 데이터 불러오기
       const weatherResponse = await weatherService.getCurrentWeather(37.5665, 126.9780);
-      if (weatherResponse.success) {
+      if (weatherResponse && weatherResponse.success) {
         setWeatherData(weatherResponse.data);
       }
-      
-      // 옷장 데이터 불러오기 (선택사항)
+    } catch (error) {
+      console.error('날씨 데이터 로드 실패:', error);
+      // 날씨 데이터는 실패해도 계속 진행
+    }
+
+    // 옷장 데이터 불러오기 (선택사항)
+    try {
       const wardrobeResponse = await wardrobeService.getItems({ page: 0, size: 10 });
-      if (wardrobeResponse.success) {
+      if (wardrobeResponse && wardrobeResponse.success) {
         setMyItems(wardrobeResponse.data.content || []);
       }
-      
     } catch (error) {
-      console.error('데이터 로드 실패:', error);
-    } finally {
-      setLoading(false);
+      console.error('옷장 데이터 로드 실패:', error);
+      // 옷장 데이터는 실패해도 계속 진행
     }
+
+    setLoading(false);
   };
 
   // 로딩 중일 때
