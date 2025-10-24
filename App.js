@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { TabBar } from './src/components/common/TabBar';
 import { LoginModal } from './src/components/common/LoginModal';
+import { LoginRequired } from './src/components/common/LoginRequired';
 import { useAuth } from './src/hooks/useAuth';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { WardrobeScreen } from './src/screens/WardrobeScreen';
@@ -10,7 +11,6 @@ import { tokenService } from './src/services/tokenService';
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [pendingTab, setPendingTab] = useState(null);
   const { isLoggedIn, checking, login } = useAuth();
   const [processingOAuth, setProcessingOAuth] = useState(true);
 
@@ -44,21 +44,8 @@ export default function App() {
     }
   };
 
-  // 탭 변경 핸들러 - 보호된 탭은 로그인 체크
+  // 탭 변경 핸들러
   const handleTabChange = (tab) => {
-    // 홈 탭은 로그인 없이 접근 가능
-    if (tab === 'home') {
-      setActiveTab(tab);
-      return;
-    }
-
-    // 다른 탭들은 로그인 필요
-    if (!isLoggedIn) {
-      setPendingTab(tab);
-      setShowLoginModal(true);
-      return;
-    }
-
     setActiveTab(tab);
   };
 
@@ -66,18 +53,21 @@ export default function App() {
   const handleLoginSuccess = () => {
     login();
     setShowLoginModal(false);
-
-    // 대기 중인 탭이 있으면 이동
-    if (pendingTab) {
-      setActiveTab(pendingTab);
-      setPendingTab(null);
-    }
   };
 
   const renderScreen = () => {
+    // 홈 페이지는 로그인 없이 접근 가능
+    if (activeTab === 'home') {
+      return <HomeScreen />;
+    }
+
+    // 다른 페이지는 로그인 필요
+    if (!isLoggedIn) {
+      return <LoginRequired onLoginPress={() => setShowLoginModal(true)} />;
+    }
+
+    // 로그인된 상태에서 다른 페이지 렌더링
     switch (activeTab) {
-      case 'home':
-        return <HomeScreen />;
       case 'wardrobe':
         return <WardrobeScreen />;
       case 'styling':
@@ -108,10 +98,7 @@ export default function App() {
 
       <LoginModal
         visible={showLoginModal}
-        onClose={() => {
-          setShowLoginModal(false);
-          setPendingTab(null);
-        }}
+        onClose={() => setShowLoginModal(false)}
         onLoginSuccess={handleLoginSuccess}
       />
     </SafeAreaView>
