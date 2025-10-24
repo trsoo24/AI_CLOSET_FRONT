@@ -173,9 +173,18 @@ class ApiClient {
     // JSON이 아닌 응답 처리 (HTML 에러 페이지 등)
     if (!contentType || !contentType.includes('application/json')) {
       const text = await response.text();
+      console.error('JSON이 아닌 응답:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType,
+        body: text.substring(0, 200), // 처음 200자만 로깅
+      });
+
       throw {
         status: response.status,
-        message: `서버 오류: ${response.status} ${response.statusText}`,
+        message: response.status === 200
+          ? '서버가 올바른 형식의 데이터를 반환하지 않았습니다.'
+          : `서버 오류 (${response.status})`,
         data: text,
       };
     }
@@ -184,14 +193,13 @@ class ApiClient {
     try {
       data = await response.json();
     } catch (err) {
+      console.error('JSON 파싱 실패:', err);
       throw {
         status: response.status,
         message: 'JSON 파싱 실패',
         data: null,
       };
     }
-
-
 
     if (!response.ok) {
       throw {
