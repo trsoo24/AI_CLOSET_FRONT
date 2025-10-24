@@ -11,6 +11,7 @@ export const useAuth = () => {
 
   const checkLoginStatus = async () => {
     const loggedIn = await authService.isLoggedIn();
+    console.log('로그인 상태 확인:', loggedIn);
     setIsLoggedIn(loggedIn);
     setChecking(false);
   };
