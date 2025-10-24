@@ -42,7 +42,7 @@ export const WardrobeScreen = () => {
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>7�D ��$� ...</Text>
+          <Text style={styles.loadingText}>옷장을 불러오는 중...</Text>
         </View>
       </View>
     );
@@ -64,7 +64,7 @@ export const WardrobeScreen = () => {
         >
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
-            <Text style={styles.errorHint}>D�\ �� �� ��t�8�</Text>
+            <Text style={styles.errorHint}>아래로 당겨서 다시 시도해보세요</Text>
           </View>
         </ScrollView>
       </View>
