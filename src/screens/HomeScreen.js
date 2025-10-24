@@ -5,6 +5,7 @@ import { Header } from '../components/common/Header';
 import { BORDER_RADIUS, COLORS, FONT_SIZE, SPACING } from '../constants';
 import { aiRecommendations, personalizedItems, trendingItems } from '../data/mockData';
 import { weatherService } from '../services/weatherService';
+import { getWeatherIcon, getTempColor, needsUmbrella } from '../utils/weatherIcons';
 
 export const HomeScreen = ({ navigation }) => {
   const [weatherData, setWeatherData] = useState(null);
@@ -18,19 +19,40 @@ export const HomeScreen = ({ navigation }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // 날씨 데이터 불러오기
       const weatherResponse = await weatherService.getCurrentWeather(37.5665, 126.9780);
       if (weatherResponse.success) {
-        setWeatherData(weatherResponse.data);
+        const rawData = weatherResponse.data;
+
+        // API 응답을 화면에 필요한 형식으로 변환
+        const transformedData = {
+          location: rawData.location,
+          currentTemp: rawData.currentTemp,
+          minTemp: rawData.minTemp,
+          maxTemp: rawData.maxTemp,
+          condition: rawData.skyCondition,
+          comment: rawData.clothingAdvice,
+          rainProbability: rawData.rainProbability,
+          needsUmbrella: needsUmbrella(rawData.rainProbability),
+          // hourlyForecasts를 hourly 형식으로 변환
+          hourly: rawData.hourlyForecasts?.map(forecast => ({
+            time: forecast.time,
+            temp: forecast.temperature,
+            icon: getWeatherIcon(forecast.skyCondition, forecast.time),
+            rainProb: forecast.rainProbability,
+          })) || [],
+        };
+
+        setWeatherData(transformedData);
       }
-      
+
       // 옷장 데이터 불러오기 (선택사항)
-      const wardrobeResponse = await wardrobeService.getItems({ page: 0, size: 10 });
-      if (wardrobeResponse.success) {
-        setMyItems(wardrobeResponse.data.content || []);
-      }
-      
+      // const wardrobeResponse = await wardrobeService.getItems({ page: 0, size: 10 });
+      // if (wardrobeResponse.success) {
+      //   setMyItems(wardrobeResponse.data.content || []);
+      // }
+
     } catch (error) {
       console.error('데이터 로드 실패:', error);
     } finally {
@@ -68,7 +90,7 @@ export const HomeScreen = ({ navigation }) => {
           <View style={styles.weatherTop}>
             <View style={styles.tempContainer}>
               <Cloud size={32} color={COLORS.secondary} />
-              <Text style={styles.temp}>
+              <Text style={[styles.temp, { color: getTempColor(weatherData?.currentTemp || '24°C') }]}>
                 {weatherData?.currentTemp || '24°C'}
               </Text>
             </View>
@@ -91,7 +113,9 @@ export const HomeScreen = ({ navigation }) => {
               <View key={i} style={styles.hourlyItem}>
                 <Text style={styles.hourlyTime}>{hour.time}</Text>
                 <Text style={styles.hourlyIcon}>{hour.icon}</Text>
-                <Text style={styles.hourlyTemp}>{hour.temp}</Text>
+                <Text style={[styles.hourlyTemp, { color: getTempColor(hour.temp) }]}>
+                  {hour.temp}
+                </Text>
               </View>
             ))}
           </ScrollView>
