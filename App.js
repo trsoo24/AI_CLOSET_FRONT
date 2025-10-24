@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { TabBar } from './src/components/common/TabBar';
+import { LoginModal } from './src/components/common/LoginModal';
 import { useAuth } from './src/hooks/useAuth';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { LoginScreen } from './src/screens/LoginScreen';
 import { WardrobeScreen } from './src/screens/WardrobeScreen';
 import { tokenService } from './src/services/tokenService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingTab, setPendingTab] = useState(null);
   const { isLoggedIn, checking, login } = useAuth();
   const [processingOAuth, setProcessingOAuth] = useState(true);
 
@@ -25,13 +27,13 @@ export default function App() {
 
       if (accessToken && refreshToken) {
         console.log('OAuth 토큰 수신:', { accessToken, refreshToken });
-        
+
         // 토큰 저장
         await tokenService.saveTokens(accessToken, refreshToken);
-        
+
         // URL에서 토큰 제거 (보안)
         window.history.replaceState({}, document.title, '/');
-        
+
         // 로그인 상태로 변경
         login();
       }
@@ -39,6 +41,36 @@ export default function App() {
       console.error('OAuth 콜백 처리 실패:', error);
     } finally {
       setProcessingOAuth(false);
+    }
+  };
+
+  // 탭 변경 핸들러 - 보호된 탭은 로그인 체크
+  const handleTabChange = (tab) => {
+    // 홈 탭은 로그인 없이 접근 가능
+    if (tab === 'home') {
+      setActiveTab(tab);
+      return;
+    }
+
+    // 다른 탭들은 로그인 필요
+    if (!isLoggedIn) {
+      setPendingTab(tab);
+      setShowLoginModal(true);
+      return;
+    }
+
+    setActiveTab(tab);
+  };
+
+  // 로그인 성공 핸들러
+  const handleLoginSuccess = () => {
+    login();
+    setShowLoginModal(false);
+
+    // 대기 중인 탭이 있으면 이동
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
     }
   };
 
@@ -68,17 +100,20 @@ export default function App() {
     );
   }
 
-  // 로그인 안 됨
-  if (!isLoggedIn) {
-    return <LoginScreen onLoginSuccess={login} />;
-  }
-
-  // 로그인 됨
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       {renderScreen()}
-      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
+
+      <LoginModal
+        visible={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          setPendingTab(null);
+        }}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </SafeAreaView>
   );
 }
