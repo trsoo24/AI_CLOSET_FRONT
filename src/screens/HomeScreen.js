@@ -18,10 +18,10 @@ export const HomeScreen = ({ navigation }) => {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
+
+    // 날씨 데이터 불러오기
     try {
-      setLoading(true);
-      
-      // 날씨 데이터 불러오기
       const weatherResponse = await weatherService.getCurrentWeather(37.5665, 126.9780);
       if (weatherResponse.success) {
         const rawData = weatherResponse.data;
@@ -46,21 +46,34 @@ export const HomeScreen = ({ navigation }) => {
         };
 
         setWeatherData(transformedData);
+      } else {
+        console.error('날씨 데이터 로드 실패:', weatherResponse.error);
       }
-      
-      // 옷장 데이터 불러오기 (선택사항)
+    } catch (error) {
+      console.error('날씨 API 호출 오류:', error);
+    }
+
+    // 옷장 데이터 불러오기 (선택사항, 인증 필요)
+    try {
       const wardrobeResponse = await wardrobeService.getItems({ page: 0, size: 10 });
       if (wardrobeResponse && wardrobeResponse.success) {
         setMyItems(wardrobeResponse.data.content || []);
+      } else if (wardrobeResponse && wardrobeResponse.status === 401) {
+        // 로그인이 필요한 경우 조용히 처리 (홈페이지는 로그인 없이 접근 가능)
+        console.log('옷장 데이터는 로그인 후 이용 가능합니다.');
+      } else {
+        console.error('옷장 데이터 로드 실패:', wardrobeResponse?.error);
       }
-      
     } catch (error) {
-      console.error('데이터 로드 실패:', error);
-
-      console.error('옷장 데이터 로드 실패:', error);
-    } finally {
-      setLoading(false);
+      // 401 에러는 정상적인 경우이므로 조용히 처리
+      if (error.status === 401 || error.code === 'UNAUTHORIZED') {
+        console.log('옷장 데이터는 로그인 후 이용 가능합니다.');
+      } else {
+        console.error('옷장 API 호출 오류:', error);
+      }
     }
+
+    setLoading(false);
   };
 
   // 로딩 중일 때

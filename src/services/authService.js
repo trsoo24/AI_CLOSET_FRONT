@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { OAuthHandler } from '../utils/oauthHandler';
-import { apiClient } from './apiClient';
+import apiClient from './apiClient';
 import { tokenService } from './tokenService';
 
 const API_URL = Platform.OS === 'web' 
