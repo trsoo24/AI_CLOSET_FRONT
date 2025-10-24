@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.gray200,
     overflow: 'hidden',
+    marginBottom: SPACING.sm,
   },
   image: {
     width: '100%',

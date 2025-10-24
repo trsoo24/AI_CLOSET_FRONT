@@ -167,7 +167,31 @@ class ApiClient {
 
   // 응답 처리
   async handleResponse(response) {
-    const data = await response.json();
+    // Content-Type 확인
+    const contentType = response.headers.get('content-type');
+
+    // JSON이 아닌 응답 처리 (HTML 에러 페이지 등)
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw {
+        status: response.status,
+        message: `서버 오류: ${response.status} ${response.statusText}`,
+        data: text,
+      };
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (err) {
+      throw {
+        status: response.status,
+        message: 'JSON 파싱 실패',
+        data: null,
+      };
+    }
+
+
 
     if (!response.ok) {
       throw {
